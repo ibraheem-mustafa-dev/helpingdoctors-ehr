@@ -1,0 +1,204 @@
+[
+  {
+    "key": "group_patient_registration",
+    "title": "Patient Registration",
+    "fields": [
+      {
+        "key": "field_first_name",
+        "label": "First Name",
+        "name": "first_name",
+        "type": "text",
+        "instructions": "Patient's legal first name",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_last_name",
+        "label": "Last Name",
+        "name": "last_name",
+        "type": "text",
+        "instructions": "Patient's legal last name",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_date_of_birth",
+        "label": "Date of Birth",
+        "name": "date_of_birth",
+        "type": "date_picker",
+        "instructions": "Patient's date of birth",
+        "required": 1,
+        "display_format": "d/m/Y",
+        "return_format": "Y-m-d",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_gender",
+        "label": "Gender",
+        "name": "gender",
+        "type": "select",
+        "instructions": "Patient's gender identity",
+        "required": 0,
+        "choices": {
+          "male": "Male",
+          "female": "Female",
+          "non_binary": "Non-binary",
+          "other": "Other",
+          "prefer_not_to_say": "Prefer not to say"
+        },
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_marital_status",
+        "label": "Marital Status",
+        "name": "marital_status",
+        "type": "select",
+        "instructions": "",
+        "required": 0,
+        "choices": {
+          "single": "Single",
+          "married": "Married",
+          "divorced": "Divorced",
+          "widowed": "Widowed",
+          "separated": "Separated"
+        },
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_phone",
+        "label": "Phone Number",
+        "name": "phone",
+        "type": "text",
+        "instructions": "Primary contact number",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_email",
+        "label": "Email Address",
+        "name": "email",
+        "type": "email",
+        "instructions": "Patient's email address",
+        "required": 0,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_address",
+        "label": "Address",
+        "name": "address",
+        "type": "textarea",
+        "instructions": "Complete address",
+        "required": 0,
+        "rows": 3
+      },
+      {
+        "key": "field_city",
+        "label": "City",
+        "name": "city",
+        "type": "text",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_state",
+        "label": "State/Province",
+        "name": "state",
+        "type": "text",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_country",
+        "label": "Country",
+        "name": "country",
+        "type": "text",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_emergency_contact_name",
+        "label": "Emergency Contact Name",
+        "name": "emergency_contact_name",
+        "type": "text",
+        "instructions": "Full name of emergency contact",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_emergency_contact_phone",
+        "label": "Emergency Contact Phone",
+        "name": "emergency_contact_phone",
+        "type": "text",
+        "instructions": "Emergency contact phone number",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_emergency_contact_relationship",
+        "label": "Relationship",
+        "name": "emergency_contact_relationship",
+        "type": "text",
+        "instructions": "Relationship to patient",
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_insurance_provider",
+        "label": "Insurance Provider",
+        "name": "insurance_provider",
+        "type": "text",
+        "instructions": "Name of insurance company",
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_insurance_policy_number",
+        "label": "Policy Number",
+        "name": "insurance_policy_number",
+        "type": "text",
+        "instructions": "Insurance policy number",
+        "wrapper": {
+          "width": "50"
+        }
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "page"
+        }
+      ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  }
+]

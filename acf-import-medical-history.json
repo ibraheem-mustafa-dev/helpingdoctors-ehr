@@ -1,0 +1,155 @@
+[
+  {
+    "key": "group_medical_history",
+    "title": "Medical History",
+    "fields": [
+      {
+        "key": "field_allergies",
+        "label": "Allergies",
+        "name": "allergies",
+        "type": "textarea",
+        "instructions": "List all known allergies (medications, food, environmental)",
+        "required": 0,
+        "rows": 4
+      },
+      {
+        "key": "field_current_medications",
+        "label": "Current Medications",
+        "name": "current_medications",
+        "type": "textarea",
+        "instructions": "List all current medications with dosages",
+        "required": 0,
+        "rows": 5
+      },
+      {
+        "key": "field_chronic_conditions",
+        "label": "Chronic Conditions",
+        "name": "chronic_conditions",
+        "type": "checkbox",
+        "instructions": "Select all that apply",
+        "choices": {
+          "diabetes": "Diabetes",
+          "hypertension": "Hypertension",
+          "asthma": "Asthma",
+          "heart_disease": "Heart Disease",
+          "copd": "COPD",
+          "kidney_disease": "Kidney Disease",
+          "liver_disease": "Liver Disease",
+          "cancer": "Cancer",
+          "hiv_aids": "HIV/AIDS",
+          "tuberculosis": "Tuberculosis",
+          "epilepsy": "Epilepsy",
+          "mental_health": "Mental Health Condition",
+          "other": "Other"
+        }
+      },
+      {
+        "key": "field_chronic_conditions_other",
+        "label": "Other Chronic Conditions",
+        "name": "chronic_conditions_other",
+        "type": "textarea",
+        "instructions": "Please specify other chronic conditions",
+        "conditional_logic": [
+          [
+            {
+              "field": "field_chronic_conditions",
+              "operator": "==",
+              "value": "other"
+            }
+          ]
+        ],
+        "rows": 3
+      },
+      {
+        "key": "field_past_surgeries",
+        "label": "Past Surgeries",
+        "name": "past_surgeries",
+        "type": "textarea",
+        "instructions": "List any previous surgeries with approximate dates",
+        "rows": 4
+      },
+      {
+        "key": "field_hospitalizations",
+        "label": "Previous Hospitalizations",
+        "name": "hospitalizations",
+        "type": "textarea",
+        "instructions": "List previous hospitalizations with reasons and dates",
+        "rows": 4
+      },
+      {
+        "key": "field_family_history",
+        "label": "Family Medical History",
+        "name": "family_history",
+        "type": "textarea",
+        "instructions": "Major illnesses in immediate family (parents, siblings)",
+        "rows": 4
+      },
+      {
+        "key": "field_smoking_status",
+        "label": "Smoking Status",
+        "name": "smoking_status",
+        "type": "select",
+        "choices": {
+          "never": "Never smoked",
+          "former": "Former smoker",
+          "current": "Current smoker"
+        }
+      },
+      {
+        "key": "field_alcohol_use",
+        "label": "Alcohol Use",
+        "name": "alcohol_use",
+        "type": "select",
+        "choices": {
+          "none": "None",
+          "occasional": "Occasional (1-2 drinks/week)",
+          "moderate": "Moderate (3-7 drinks/week)",
+          "heavy": "Heavy (8+ drinks/week)"
+        }
+      },
+      {
+        "key": "field_drug_use",
+        "label": "Recreational Drug Use",
+        "name": "drug_use",
+        "type": "select",
+        "choices": {
+          "none": "None",
+          "past": "Past use only",
+          "current": "Current use"
+        }
+      },
+      {
+        "key": "field_blood_type",
+        "label": "Blood Type",
+        "name": "blood_type",
+        "type": "select",
+        "choices": {
+          "unknown": "Unknown",
+          "a_positive": "A+",
+          "a_negative": "A-",
+          "b_positive": "B+",
+          "b_negative": "B-",
+          "ab_positive": "AB+",
+          "ab_negative": "AB-",
+          "o_positive": "O+",
+          "o_negative": "O-"
+        }
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "page"
+        }
+      ]
+    ],
+    "menu_order": 1,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  }
+]

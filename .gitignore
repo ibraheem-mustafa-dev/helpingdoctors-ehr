@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment & secrets
+.env
+.env.local
+.env.production
+wp-config.php
+
+# IDE & editor
+.vs/
+.vscode/
+*.code-workspace
+sftp.json
+
+# Claude Code chat logs (may contain secrets)
+.claude/.chats/
+
+# Build & cache
+.eslintcache
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+NUL
+
+# WordPress uploads (large binary files)
+public_html/wp-content/uploads/
+
+# Logs
+*.log
+debug.log
+
+# Backups
+*.backup
+*.bak
+*.sql
+
+# Tessdata (large binary)
+tessdata/

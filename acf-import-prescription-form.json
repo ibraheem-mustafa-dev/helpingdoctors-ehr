@@ -1,0 +1,182 @@
+[
+  {
+    "key": "group_prescription_form",
+    "title": "Prescription Form",
+    "fields": [
+      {
+        "key": "field_medication_name",
+        "label": "Medication Name",
+        "name": "medication_name",
+        "type": "text",
+        "instructions": "Generic or brand name",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_medication_strength",
+        "label": "Strength/Dosage",
+        "name": "medication_strength",
+        "type": "text",
+        "instructions": "e.g., 500mg, 10ml, etc.",
+        "required": 1,
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_dosage_form",
+        "label": "Dosage Form",
+        "name": "dosage_form",
+        "type": "select",
+        "instructions": "Form of medication",
+        "choices": {
+          "tablet": "Tablet",
+          "capsule": "Capsule",
+          "liquid": "Liquid/Syrup",
+          "injection": "Injection",
+          "cream": "Cream/Ointment",
+          "inhaler": "Inhaler",
+          "drops": "Drops",
+          "patch": "Patch",
+          "suppository": "Suppository",
+          "other": "Other"
+        },
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_route",
+        "label": "Route",
+        "name": "route",
+        "type": "select",
+        "instructions": "Method of administration",
+        "choices": {
+          "oral": "Oral",
+          "topical": "Topical",
+          "injection_im": "Injection (IM)",
+          "injection_iv": "Injection (IV)",
+          "injection_sc": "Injection (SC)",
+          "inhalation": "Inhalation",
+          "rectal": "Rectal",
+          "ophthalmic": "Ophthalmic (Eye)",
+          "otic": "Otic (Ear)",
+          "nasal": "Nasal",
+          "other": "Other"
+        },
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_frequency",
+        "label": "Frequency",
+        "name": "frequency",
+        "type": "select",
+        "instructions": "How often to take medication",
+        "required": 1,
+        "choices": {
+          "once_daily": "Once daily",
+          "twice_daily": "Twice daily (BID)",
+          "three_times_daily": "Three times daily (TID)",
+          "four_times_daily": "Four times daily (QID)",
+          "every_4_hours": "Every 4 hours",
+          "every_6_hours": "Every 6 hours",
+          "every_8_hours": "Every 8 hours",
+          "every_12_hours": "Every 12 hours",
+          "as_needed": "As needed (PRN)",
+          "weekly": "Weekly",
+          "monthly": "Monthly",
+          "other": "Other"
+        },
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_duration",
+        "label": "Duration",
+        "name": "duration",
+        "type": "text",
+        "instructions": "Length of treatment (e.g., 7 days, 2 weeks, ongoing)",
+        "required": 1,
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_quantity",
+        "label": "Quantity",
+        "name": "quantity",
+        "type": "number",
+        "instructions": "Total quantity to dispense",
+        "required": 1,
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_refills",
+        "label": "Refills Allowed",
+        "name": "refills",
+        "type": "number",
+        "instructions": "Number of refills permitted",
+        "default_value": 0,
+        "min": 0,
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_special_instructions",
+        "label": "Special Instructions",
+        "name": "special_instructions",
+        "type": "textarea",
+        "instructions": "Patient instructions (e.g., take with food, avoid alcohol)",
+        "rows": 3
+      },
+      {
+        "key": "field_indication",
+        "label": "Indication",
+        "name": "indication",
+        "type": "text",
+        "instructions": "Reason for prescription",
+        "required": 1
+      },
+      {
+        "key": "field_prescriber_notes",
+        "label": "Prescriber Notes",
+        "name": "prescriber_notes",
+        "type": "textarea",
+        "instructions": "Internal notes (not visible to patient)",
+        "rows": 3
+      },
+      {
+        "key": "field_generic_substitution",
+        "label": "Generic Substitution",
+        "name": "generic_substitution",
+        "type": "true_false",
+        "instructions": "Allow generic substitution",
+        "default_value": 1,
+        "ui": 1
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "page"
+        }
+      ]
+    ],
+    "menu_order": 3,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  }
+]

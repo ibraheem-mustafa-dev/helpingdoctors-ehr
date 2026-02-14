@@ -1,0 +1,158 @@
+[
+  {
+    "key": "group_vital_signs",
+    "title": "Vital Signs",
+    "fields": [
+      {
+        "key": "field_temperature",
+        "label": "Temperature",
+        "name": "temperature",
+        "type": "number",
+        "instructions": "Patient temperature in Celsius",
+        "required": 0,
+        "append": "°C",
+        "step": 0.1,
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_heart_rate",
+        "label": "Heart Rate",
+        "name": "heart_rate",
+        "type": "number",
+        "instructions": "Beats per minute",
+        "required": 0,
+        "append": "bpm",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_respiratory_rate",
+        "label": "Respiratory Rate",
+        "name": "respiratory_rate",
+        "type": "number",
+        "instructions": "Breaths per minute",
+        "required": 0,
+        "append": "breaths/min",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_blood_pressure_systolic",
+        "label": "Blood Pressure (Systolic)",
+        "name": "blood_pressure_systolic",
+        "type": "number",
+        "instructions": "Systolic pressure",
+        "required": 0,
+        "append": "mmHg",
+        "wrapper": {
+          "width": "25"
+        }
+      },
+      {
+        "key": "field_blood_pressure_diastolic",
+        "label": "Blood Pressure (Diastolic)",
+        "name": "blood_pressure_diastolic",
+        "type": "number",
+        "instructions": "Diastolic pressure",
+        "required": 0,
+        "append": "mmHg",
+        "wrapper": {
+          "width": "25"
+        }
+      },
+      {
+        "key": "field_oxygen_saturation",
+        "label": "Oxygen Saturation",
+        "name": "oxygen_saturation",
+        "type": "number",
+        "instructions": "SpO2 percentage",
+        "required": 0,
+        "append": "%",
+        "min": 0,
+        "max": 100,
+        "wrapper": {
+          "width": "25"
+        }
+      },
+      {
+        "key": "field_weight",
+        "label": "Weight",
+        "name": "weight",
+        "type": "number",
+        "instructions": "Patient weight",
+        "required": 0,
+        "append": "kg",
+        "step": 0.1,
+        "wrapper": {
+          "width": "25"
+        }
+      },
+      {
+        "key": "field_height",
+        "label": "Height",
+        "name": "height",
+        "type": "number",
+        "instructions": "Patient height",
+        "required": 0,
+        "append": "cm",
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_bmi",
+        "label": "BMI",
+        "name": "bmi",
+        "type": "number",
+        "instructions": "Body Mass Index (calculated automatically)",
+        "required": 0,
+        "readonly": 1,
+        "step": 0.1,
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_pain_level",
+        "label": "Pain Level",
+        "name": "pain_level",
+        "type": "range",
+        "instructions": "0 = No pain, 10 = Worst pain imaginable",
+        "required": 0,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "wrapper": {
+          "width": "33"
+        }
+      },
+      {
+        "key": "field_vital_signs_notes",
+        "label": "Notes",
+        "name": "vital_signs_notes",
+        "type": "textarea",
+        "instructions": "Additional observations or notes",
+        "rows": 3
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "page"
+        }
+      ]
+    ],
+    "menu_order": 2,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  }
+]

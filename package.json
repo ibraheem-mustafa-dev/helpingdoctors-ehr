@@ -1,0 +1,26 @@
+{
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@eslint/json": "^0.13.2",
+    "@eslint/markdown": "^7.3.0",
+    "@wordpress/eslint-plugin": "^22.0.0",
+    "eslint": "^9.36.0",
+    "eslint-config-wordpress": "^2.0.0",
+    "eslint-formatter-compact": "^8.40.0",
+    "eslint-plugin-json": "^4.0.1",
+    "eslint-plugin-jsonc": "^2.20.1",
+    "eslint-plugin-markdown": "^5.1.0",
+    "globals": "^16.4.0",
+    "jsonc-eslint-parser": "^2.4.1",
+    "stylelint": "^16.24.0",
+    "stylelint-config-standard": "^39.0.0"
+  },
+  "scripts": {
+    "lint:js": "eslint \"public_html/wp-content/plugins/helpingdoctors-ehr-pro/assets/**/*.js\" --cache",
+    "lint:js:fix": "eslint \"public_html/wp-content/plugins/helpingdoctors-ehr-pro/assets/**/*.js\" --fix --cache",
+    "lint:css": "stylelint \"public_html/wp-content/plugins/helpingdoctors-ehr-pro/assets/**/*.css\"",
+    "lint:css:fix": "stylelint \"public_html/wp-content/plugins/helpingdoctors-ehr-pro/assets/**/*.css\" --fix",
+    "lint:all": "npm run lint:js && npm run lint:css",
+    "lint:all:fix": "npm run lint:js:fix && npm run lint:css:fix"
+  }
+}

@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         name="HelpingDoctors EHR Pro"
+         xsi:noNamespaceSchemaLocation="https://schema.phpcodesniffer.com/phpcs.xsd">
+
+    <description>Practical WordPress coding standards for HelpingDoctors EHR Pro</description>
+
+    <!--
+    ===========================================================================
+    WHAT TO SCAN
+    ===========================================================================
+    -->
+
+    <!-- Our custom code directories -->
+    <file>./public_html/wp-content/plugins/helpingdoctors-ehr-pro</file>
+    <file>./public_html/wp-content/mu-plugins</file>
+    <file>./public_html/wp-content/themes/helping-doctors-ehr</file>
+
+    <!-- Exclude third-party and generated code -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*.min.js</exclude-pattern>
+    <exclude-pattern>*.min.css</exclude-pattern>
+
+    <!-- Exclude Hostinger mu-plugins -->
+    <exclude-pattern>*/mu-plugins/hostinger-*</exclude-pattern>
+
+    <!--
+    ===========================================================================
+    COMMAND LINE OPTIONS
+    ===========================================================================
+    -->
+
+    <!-- Strip paths for cleaner output -->
+    <arg name="basepath" value="."/>
+
+    <!-- Show progress -->
+    <arg value="p"/>
+
+    <!-- Use colours -->
+    <arg name="colors"/>
+
+    <!-- Show sniff names (helpful for debugging) -->
+    <arg value="s"/>
+
+    <!-- Parallel processing - faster on multi-core -->
+    <arg name="parallel" value="8"/>
+
+    <!--
+    ===========================================================================
+    RULESETS - WordPress-Extra (practical, not pedantic)
+    ===========================================================================
+    -->
+
+    <!--
+    WordPress-Extra = WordPress-Core + extra best practices
+    We DON'T include WordPress-Docs (too noisy for working code)
+    -->
+    <rule ref="WordPress-Extra">
+        <!-- Allow short array syntax: [] instead of array() -->
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+
+        <!-- Allow flexible file naming (not strict WP class-*.php) -->
+        <exclude name="WordPress.Files.FileName"/>
+
+        <!-- Don't require comments to end with punctuation (noise) -->
+        <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+
+        <!-- Allow functions and classes in same file (common in WP) -->
+        <exclude name="Universal.Files.SeparateFunctionsFromOO.Mixed"/>
+    </rule>
+
+    <!--
+    We skip WordPress-Docs entirely because:
+    - Generates hundreds of "missing docblock" errors
+    - Doesn't catch real bugs
+    - You can add it later when polishing for release
+    -->
+
+    <!--
+    ===========================================================================
+    PROJECT CONFIGURATION
+    ===========================================================================
+    -->
+
+    <!-- Minimum WordPress version (enables modern function checks) -->
+    <config name="minimum_wp_version" value="6.4"/>
+
+    <!-- Text domain for i18n checks -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="helpingdoctors-ehr-pro"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Required prefix for globals/hooks to avoid conflicts -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="hd_"/>
+                <element value="HD_"/>
+                <element value="helpingdoctors"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!--
+    ===========================================================================
+    SECURITY CHECKS (These are important - don't disable)
+    ===========================================================================
+
+    The following sniffs ARE enabled and will catch:
+    - SQL injection (WordPress.DB.PreparedSQL)
+    - XSS vulnerabilities (WordPress.Security.EscapeOutput)
+    - CSRF issues (WordPress.Security.NonceVerification)
+    - Direct file access (ABSPATH checks)
+
+    These security sniffs are why we use PHPCS - don't exclude them!
+    -->
+
+</ruleset>

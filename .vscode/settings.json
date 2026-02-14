@@ -1,0 +1,9 @@
+{
+  "claude-code.environmentVariables": [
+    {
+      "name": "CLAUDE_CODE_GIT_BASH_PATH",
+      "value": "C:\\Program Files\\Git\\bin\\bash.exe"
+    }
+  ],
+  "claude-config.autoUseContext7": true
+}

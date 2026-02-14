@@ -1,0 +1,16 @@
+__construct
+init_chatbot
+enqueue_chatbot_assets
+render_chatbot_interface
+handle_chatbot_query
+classify_query
+process_classified_query
+call_cloudflare_ai
+verify_ai_services
+get_user_medical_role
+get_user_permissions
+init_comprehensive_audit_logging
+init_quantum_encryption
+log_chatbot_interaction
+user_can_perform_query
+get_permission_filtered_examples

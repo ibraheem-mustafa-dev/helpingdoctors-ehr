@@ -1,0 +1,51 @@
+{
+    "name": "helpingdoctors/ehr-project",
+    "description": "HelpingDoctors EHR Pro - Root development configuration",
+    "type": "project",
+    "require-dev": {
+        "php-stubs/wordpress-stubs": "^6.8",
+        "php-stubs/acf-pro-stubs": "^6.5",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "szepeviktor/phpstan-wordpress": "^2.0",
+        "squizlabs/php_codesniffer": "^3.10",
+        "wp-coding-standards/wpcs": "^3.2",
+        "phpcsstandards/phpcsextra": "^1.2",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+    },
+    "scripts": {
+        "lint": [
+            "@php vendor/bin/parallel-lint --colors --exclude vendor --exclude node_modules --exclude public_html/wp-content/plugins/helpingdoctors-ehr-pro/vendor public_html/wp-content/plugins/helpingdoctors-ehr-pro public_html/wp-content/mu-plugins public_html/wp-content/themes/helping-doctors-ehr"
+        ],
+        "cs": "@php vendor/bin/phpcs",
+        "cs:fix": "@php vendor/bin/phpcbf",
+        "cs:summary": "@php vendor/bin/phpcs --report=summary",
+        "stan": "@php vendor/bin/phpstan analyse --memory-limit=2G",
+        "quality": [
+            "@lint",
+            "@cs:summary"
+        ],
+        "quality:full": [
+            "@lint",
+            "@cs",
+            "@stan"
+        ],
+        "fix": "@cs:fix"
+    },
+    "scripts-descriptions": {
+        "lint": "Check PHP syntax errors (fast)",
+        "cs": "Check coding standards (detailed)",
+        "cs:fix": "Auto-fix coding standard issues",
+        "cs:summary": "Check coding standards (summary only)",
+        "stan": "Static analysis with PHPStan",
+        "quality": "Run lint + coding standards summary",
+        "quality:full": "Run all checks (lint + cs + phpstan)",
+        "fix": "Auto-fix what can be fixed"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    }
+}

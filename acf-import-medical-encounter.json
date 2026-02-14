@@ -1,0 +1,183 @@
+[
+  {
+    "key": "group_medical_encounter",
+    "title": "Medical Encounter",
+    "fields": [
+      {
+        "key": "field_chief_complaint",
+        "label": "Chief Complaint",
+        "name": "chief_complaint",
+        "type": "textarea",
+        "instructions": "Primary reason for visit",
+        "required": 1,
+        "rows": 3
+      },
+      {
+        "key": "field_history_present_illness",
+        "label": "History of Present Illness",
+        "name": "history_present_illness",
+        "type": "wysiwyg",
+        "instructions": "Detailed description of current condition",
+        "required": 0,
+        "tabs": "visual",
+        "toolbar": "basic",
+        "media_upload": 0
+      },
+      {
+        "key": "field_review_of_systems",
+        "label": "Review of Systems",
+        "name": "review_of_systems",
+        "type": "checkbox",
+        "instructions": "Check all systems reviewed",
+        "choices": {
+          "constitutional": "Constitutional",
+          "eyes": "Eyes",
+          "ent": "ENT",
+          "cardiovascular": "Cardiovascular",
+          "respiratory": "Respiratory",
+          "gastrointestinal": "Gastrointestinal",
+          "genitourinary": "Genitourinary",
+          "musculoskeletal": "Musculoskeletal",
+          "skin": "Skin/Integumentary",
+          "neurological": "Neurological",
+          "psychiatric": "Psychiatric",
+          "endocrine": "Endocrine",
+          "hematologic": "Hematologic/Lymphatic",
+          "allergic": "Allergic/Immunologic"
+        }
+      },
+      {
+        "key": "field_physical_examination",
+        "label": "Physical Examination",
+        "name": "physical_examination",
+        "type": "wysiwyg",
+        "instructions": "Detailed physical exam findings",
+        "required": 0,
+        "tabs": "visual",
+        "toolbar": "basic",
+        "media_upload": 0
+      },
+      {
+        "key": "field_assessment",
+        "label": "Assessment/Diagnosis",
+        "name": "assessment",
+        "type": "textarea",
+        "instructions": "Clinical impression and diagnosis",
+        "required": 1,
+        "rows": 4
+      },
+      {
+        "key": "field_icd_codes",
+        "label": "ICD-11 Diagnosis Codes",
+        "name": "icd_codes",
+        "type": "text",
+        "instructions": "ICD-11 codes (comma separated)",
+        "required": 0
+      },
+      {
+        "key": "field_treatment_plan",
+        "label": "Treatment Plan",
+        "name": "treatment_plan",
+        "type": "wysiwyg",
+        "instructions": "Detailed treatment and management plan",
+        "required": 1,
+        "tabs": "visual",
+        "toolbar": "basic",
+        "media_upload": 0
+      },
+      {
+        "key": "field_medications_prescribed",
+        "label": "Medications Prescribed",
+        "name": "medications_prescribed",
+        "type": "textarea",
+        "instructions": "List of medications prescribed during this visit",
+        "rows": 3
+      },
+      {
+        "key": "field_procedures_performed",
+        "label": "Procedures Performed",
+        "name": "procedures_performed",
+        "type": "textarea",
+        "instructions": "Any procedures or interventions performed",
+        "rows": 3
+      },
+      {
+        "key": "field_tests_ordered",
+        "label": "Laboratory/Imaging Tests Ordered",
+        "name": "tests_ordered",
+        "type": "textarea",
+        "instructions": "Lab tests, imaging, or other diagnostics ordered",
+        "rows": 3
+      },
+      {
+        "key": "field_follow_up",
+        "label": "Follow-up Instructions",
+        "name": "follow_up",
+        "type": "textarea",
+        "instructions": "When and why patient should return",
+        "required": 0,
+        "rows": 3
+      },
+      {
+        "key": "field_patient_education",
+        "label": "Patient Education Provided",
+        "name": "patient_education",
+        "type": "textarea",
+        "instructions": "Topics discussed with patient",
+        "rows": 3
+      },
+      {
+        "key": "field_referrals",
+        "label": "Referrals",
+        "name": "referrals",
+        "type": "textarea",
+        "instructions": "Referrals to specialists or other services",
+        "rows": 2
+      },
+      {
+        "key": "field_encounter_type",
+        "label": "Encounter Type",
+        "name": "encounter_type",
+        "type": "select",
+        "choices": {
+          "office_visit": "Office Visit",
+          "emergency": "Emergency",
+          "urgent_care": "Urgent Care",
+          "follow_up": "Follow-up",
+          "preventive": "Preventive Care",
+          "telehealth": "Telehealth",
+          "home_visit": "Home Visit"
+        },
+        "wrapper": {
+          "width": "50"
+        }
+      },
+      {
+        "key": "field_encounter_duration",
+        "label": "Encounter Duration",
+        "name": "encounter_duration",
+        "type": "number",
+        "instructions": "Length of visit in minutes",
+        "append": "minutes",
+        "wrapper": {
+          "width": "50"
+        }
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "page"
+        }
+      ]
+    ],
+    "menu_order": 4,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  }
+]

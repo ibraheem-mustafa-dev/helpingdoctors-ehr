@@ -1,0 +1,23 @@
+includes:
+  - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+  level: 4
+  
+  paths:
+    - public_html/wp-content/plugins/helpingdoctors-ehr-pro/
+    - public_html/wp-content/mu-plugins/
+    - public_html/wp-config-snippets/
+    - public_html/wp-content/themes/helping-doctors-ehr/
+  
+  bootstrapFiles:
+    - vendor/autoload.php
+  
+  excludePaths:
+    - public_html/wp-content/plugins/helpingdoctors-ehr-pro/vendor/*
+    - public_html/wp-content/plugins/helpingdoctors-ehr-pro/node_modules/*
+    - public_html/wp-content/mu-plugins/hostinger-*
+  
+  ignoreErrors:
+    - '#^Parameter \#2 \$callback of function add_(action|filter) expects callable#'
+    - '#^Function (esc_|sanitize_)\w+ might not be defined#'

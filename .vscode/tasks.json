@@ -1,0 +1,152 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Quality: Quick Check (Lint + CS Summary)",
+            "type": "shell",
+            "command": "composer quality",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Quality: Full Check (Lint + CS + PHPStan)",
+            "type": "shell",
+            "command": "composer quality:full",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPCS: Check All (Detailed)",
+            "type": "shell",
+            "command": "composer cs",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPCS: Check Current File",
+            "type": "shell",
+            "command": "php vendor/bin/phpcs \"${file}\"",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPCS: Fix All (Auto)",
+            "type": "shell",
+            "command": "composer fix",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPCS: Fix Current File",
+            "type": "shell",
+            "command": "php vendor/bin/phpcbf \"${file}\"",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPStan: Analyse All",
+            "type": "shell",
+            "command": "composer stan",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPStan: Analyse Current File",
+            "type": "shell",
+            "command": "php vendor/bin/phpstan analyse --memory-limit=2G \"${file}\"",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHP: Lint All",
+            "type": "shell",
+            "command": "composer lint",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHP: Lint Current File",
+            "type": "shell",
+            "command": "php -l \"${file}\"",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Composer: Install",
+            "type": "shell",
+            "command": "composer install",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Composer: Update",
+            "type": "shell",
+            "command": "composer update",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
