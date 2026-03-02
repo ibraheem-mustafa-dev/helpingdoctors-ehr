@@ -10,6 +10,10 @@
 **Primary Market**: Gaza healthcare facilities and other disaster/crisis zones (humanitarian deployment)
 **Secondary Market**: UK healthcare providers (GDPR-compliant) - This should be focused on asthe only way we'll pay for the primary market is by getting the commercial customers on board.
 
+## Git
+
+**Remote:** `github.com/ibraheem-mustafa-dev/helpingdoctors-ehr` (private). See global CLAUDE.md for workflow rules.
+
 ### Mission
 Enable healthcare workers to deliver quality care in challenging environments (war zones, resource-constrained settings, low connectivity) through reliable, accessible, and secure digital health records.
 
