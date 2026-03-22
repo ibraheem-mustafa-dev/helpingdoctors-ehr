@@ -61,7 +61,7 @@ Read CONVERSATION-HANDOFF.md and CLAUDE.md for full context, then work through t
 | `/using-superpowers` | FIRST — before any response |
 | `/research-buddies` | Task 1 — research best SaaS tech stack for healthcare (Laravel vs Next.js vs other) |
 | `/software-architecture` | Task 2 — design Clean Architecture for the standalone SaaS |
-| `/writing-plans` | Task 3 — rewrite STRATEGIC-PLAN.md for standalone SaaS |
+| `/strategic-plan` | Task 3 — rewrite STRATEGIC-PLAN.md for standalone SaaS |
 | `/interactive-brief` | Task 4 — generate new brief from rewritten plan, save to A:/.openclaw/.interactive-briefs/ |
 | `/claude-md-management:revise-claude-md` | Task 5 — update CLAUDE.md to reflect standalone SaaS direction |
 | `/gap-analysis` | After each task — quality gate before proceeding |
@@ -99,7 +99,7 @@ Use `/research-buddies` to determine: Laravel backend + Next.js frontend? Next.j
 Use `/software-architecture` + `feature-dev:code-architect` agent. Design Clean Architecture with: auth layer, patient data layer, appointment layer, prescription layer, lab layer, FHIR facade, Shifa Bot integration point, WP connector API. Run `/gap-analysis` on output.
 
 ## Task 3: Rewrite STRATEGIC-PLAN.md
-Use `/writing-plans`. Rewrite the 16-week plan for standalone SaaS. Reference what business logic to port from existing PHP codebase. Update ROADMAP.md and BUSINESS-MODEL.md. Run `/gap-analysis` on output.
+Use `/strategic-plan`. Rewrite the 16-week plan for standalone SaaS. Reference what business logic to port from existing PHP codebase. Update ROADMAP.md and BUSINESS-MODEL.md. Run `/gap-analysis` on output.
 
 ## Task 4: Generate interactive brief + update OpenClaw
 Use `/interactive-brief` on the rewritten plan. Save to A:/.openclaw/.interactive-briefs/. Delete or archive the outdated 2026-03-22-helpingdoctors-strategic-plan.html. Update Memory MCP entities.
