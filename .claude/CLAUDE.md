@@ -502,4 +502,36 @@ npm run lint:js
 ### External Resources
 - [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/)
 - [WCAG 2.2 Guidelines](https://www.w3.org/TR/WCAG22/)
-- [UK GDPR Guide for Healthcare](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/)
+- [UK GDPR Guide for Healthcare](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/)## Strategic Decisions — 2026-03-12
+
+### Architecture
+- SGS theme + custom blocks replacing ALL Spectra/UAG dependencies — dependency risk largely resolved
+- AWS hosting target before any production deployment (Hostinger shared = dev only)
+- Dual architecture planned: WP plugin (accessible path) + standalone app (premium commercial)
+  - Both options, potentially syncable — especially for ecommerce/pharmacy
+  - Standalone would have own simple site but pairs naturally with WP for the full website
+- WP remains the best pairing for clinic websites; standalone for pure app use cases
+
+### Shafi AI
+- Previous build exists but not fully functional
+- Decision: rebuild from scratch (tech has moved on, no need to preserve existing code)
+- Shafi (شافي) name confirmed — Bean aware of Islamic nuance re: Asma ul-Husna, decision made to keep it
+- Shafi AI to be treated as a standalone premium/enterprise module with credit or enterprise licensing
+
+### Pricing Model
+- NOT one-off. Tiered subscription by clinic size + functionality + support level
+- Shafi AI = separate enterprise/credit-based tier (high-usage = enterprise licence)
+- Continually developed + maintained — recurring model
+
+### Go-to-Market
+- Primary: grassroots local doctors → Muslim-owned UK clinics
+- Growth: networking + grant provider introductions + charity deployments as case studies
+- Longer-term: NHS clinics (via grant providers, introductions)
+
+### Compliance
+- FHIR integration was started (confirm status, find files)
+- MHRA/SaMD path needed for NHS clinical use — not immediate blocker for grassroots phase
+
+### Competitors
+- UAG = Ultimate Addons for Gutenberg — being removed via SGS blocks
+- KiviCare threat lower than assessed since Shafi AI + dual model is genuinely differentiated
