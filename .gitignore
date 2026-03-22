@@ -41,3 +41,4 @@ debug.log
 
 # Tessdata (large binary)
 tessdata/
+.interactive-briefs/
