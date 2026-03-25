@@ -1,46 +1,80 @@
 # ICD-11 Medical Codes
 
-**Project:** HelpingDoctors EHR Pro
+**Project:** Medinova
 **Standard:** WHO ICD-11 (NOT ICD-10)
-**API:** WHO ICD-11 API with HD_WHO_ICD11_TOKEN
+**API:** WHO ICD-11 API via NestJS HttpService
 
 ---
 
 ## Why ICD-11
 
-- **Current standard** - Released 2022, replacing ICD-10
-- **More specific** - Better granularity for diagnosis
-- **Multilingual** - Arabic support for Gaza clinics
-- **API available** - WHO provides free API
+- Current WHO standard (released 2022, replacing ICD-10)
+- Better granularity for diagnosis coding
+- Multilingual — Arabic, French, Spanish, and more
+- Free API from WHO
+- ICD-10 crossmap available for transitioning clinics
 
 ---
 
-## API Usage
+## ICD11Service
 
-```php
-// Search ICD-11 codes
-function hd_search_icd11($term, $language = 'en') {
-    $response = wp_remote_get(
-        'https://id.who.int/icd/release/11/2024-01/mms/search?' . 
-        http_build_query([
-            'q' => $term,
-            'language' => $language
-        ]),
-        [
-            'headers' => [
-                'Authorization' => 'Bearer ' . HD_WHO_ICD11_TOKEN,
-                'Accept' => 'application/json',
-                'API-Version' => 'v2',
-                'Accept-Language' => $language
-            ]
-        ]
+```typescript
+@Injectable()
+export class Icd11Service {
+  private readonly baseUrl = 'https://id.who.int/icd/release/11/2024-01/mms';
+
+  constructor(
+    private readonly http: HttpService,
+    private readonly redis: RedisService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async search(term: string, language = 'en'): Promise<Icd11SearchResult[]> {
+    const cacheKey = `icd11:search:${language}:${term}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    const { data } = await firstValueFrom(
+      this.http.get<Icd11ApiResponse>(`${this.baseUrl}/search`, {
+        params: { q: term, language },
+        headers: {
+          Authorization: `Bearer ${this.config.get('WHO_ICD11_TOKEN')}`,
+          Accept: 'application/json',
+          'API-Version': 'v2',
+          'Accept-Language': language,
+        },
+      }),
     );
-    
-    if (is_wp_error($response)) {
-        return [];
-    }
-    
-    return json_decode(wp_remote_retrieve_body($response), true);
+
+    const results = data.destinationEntities.map((e) => ({
+      code: e.theCode,
+      title: e.title,
+      matchScore: e.score,
+    }));
+
+    await this.redis.set(cacheKey, JSON.stringify(results), 'EX', 86400); // 24h TTL
+    return results;
+  }
+}
+```
+
+---
+
+## Response Types
+
+```typescript
+interface Icd11SearchResult {
+  code: string;       // e.g. "BA00.0"
+  title: string;      // e.g. "Acute nasopharyngitis"
+  matchScore: number;
+}
+
+interface Icd11ApiResponse {
+  destinationEntities: Array<{
+    theCode: string;
+    title: string;
+    score: number;
+  }>;
 }
 ```
 
@@ -48,42 +82,37 @@ function hd_search_icd11($term, $language = 'en') {
 
 ## Code Validation
 
-```php
-// Validate ICD-11 code format
-function hd_validate_icd11_code($code) {
-    // ICD-11 format: Letter + digits, optionally with dot
-    // Examples: BA00, BA00.0, BA00.00
-    return preg_match('/^[A-Z][A-Z0-9]{2,5}(\.[0-9Z]{1,2})?$/', $code);
+```typescript
+function isValidIcd11Code(code: string): boolean {
+  // ICD-11 format: Letter + alphanumeric, optionally with dot
+  // Examples: BA00, BA00.0, BA00.0Z
+  return /^[A-Z][A-Z0-9]{2,5}(\.[0-9Z]{1,2})?$/.test(code);
 }
 ```
 
 ---
 
-## Common Codes Reference
+## Offline Fallback
 
-| Code | Description |
-|------|-------------|
-| BA00 | Acute respiratory infection |
-| CA00 | Malignant neoplasms |
-| DA01 | Diabetes mellitus |
-| FA00 | Mood disorders |
-| GA00 | Diseases of the nervous system |
-| NA00 | Injuries |
+Redis cache serves as the primary offline strategy. If the WHO API is unreachable:
+
+1. Return cached results if available (even if expired)
+2. Allow free-text diagnosis entry with `icd11Code: null`
+3. Queue unresolved entries for code assignment when connectivity returns
+4. Pre-seed Redis with ~500 most common codes per specialty on tenant creation
 
 ---
 
-## Offline Fallback
+## Arabic Language Support
 
-For Gaza clinics with poor connectivity:
-- Cache common codes locally
-- Allow free-text if API unavailable
-- Sync codes when connection restored
+Pass `language: 'ar'` to search. WHO API returns Arabic titles natively. Store the user's preferred language in their profile and default all ICD-11 lookups to it.
 
 ---
 
 ## Checklist
 
 - [ ] Using ICD-11, not ICD-10?
-- [ ] Validating code format?
-- [ ] Caching for offline use?
-- [ ] Arabic language support?
+- [ ] Results cached in Redis with 24h TTL?
+- [ ] Offline fallback handles API unavailability?
+- [ ] Arabic + other languages supported via Accept-Language?
+- [ ] Code format validated before storage?

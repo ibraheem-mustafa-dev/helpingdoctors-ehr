@@ -1,119 +1,112 @@
-# Session Handoff — 2026-03-22
+# Session Handoff — 24 March 2026 (Session 2)
 
 ## Completed This Session
-1. **Full project code review** with 4 specialist agents (code explorer, code reviewer, EHR security, duplication finder). Found 9 critical, 13 high, 20+ medium/low issues. Full report in chat history and saved to OpenClaw memory.
-2. **Deep research** (93 sources, 30 read in depth) covering EHR market 2026, competition (KiviCare CVEs), regulation (DTAC, DSPT, MHRA, DUA Act), tech stack, offline-first architecture, AI clinical safety, BOGO model validation.
-3. **Research-buddies** on SaaS vs WP architecture question. Nerd + Practical One, 2 rounds + discussions. Key finding: no UK healthcare SaaS uses WordPress; WP multisite prefix = zero tenant isolation.
-4. **Internal debate** (Proposer, Challenger, Red Team). Proposer dropped from 82% to 51% confidence on WP-first. Red Team found Option D (headless WP). Bean rejected all options.
-5. **Bean's final architecture decision:** Standalone SaaS on AWS is the product. WordPress is an optional frontend connector only. Data never lives on WP. Quality over speed. Commercial first, charity funded by commercial.
-6. **STRATEGIC-PLAN.md written** (76 tasks, 16 weeks) but reflects pre-decision two-track architecture. MUST BE REWRITTEN next session to reflect standalone SaaS.
-7. **Interactive briefs** generated at `.interactive-briefs/` and copied to `A:/.openclaw/.interactive-briefs/`. The strategic plan brief is outdated.
-8. **OpenClaw Memory MCP** updated with 4 entities + 5 relations covering all findings and decisions.
+1. **Audited all 7 reference docs** — STRATEGIC-PLAN.md, ARCHITECTURE.md, DATABASE-SCHEMA.md, FILE-MAP.md, API-REFERENCE.md, CODING-STANDARDS.md, COMPLIANCE.md all scored as ship-ready with zero WordPress leakage
+2. **Deleted 40+ old WP-era docs** — root-level reports, docs/ subdirectory files, all cleaned
+3. **Deleted 6 WP-only rules** — 01-wordpress-multisite, 02-sftp-deployment, 04-um-roles, 09-constants, 14-shafi-chatbot, 15-file-organisation
+4. **Rewrote 10 rules for TypeScript/NestJS** — medical-security, frontend-first, dashboard-widgets, offline-first, accessibility, database-patterns, testing, error-handling, icd11-codes, humanitarian-context
+5. **Created 14-shifa-bot.md** — new rule for Shifa Bot (AWS Bedrock, admin-assist only)
+6. **Rewrote root CLAUDE.md** — now points to .claude/CLAUDE.md for Medinova SaaS context
+7. **Generated interactive brief** — A:/.openclaw/.interactive-briefs/2026-03-24-medinova-strategic-plan.html (15 sections, 4 decisions, 1 blocking)
+8. **Deleted 4 outdated interactive briefs** — from WP-era sessions
 
 ## Current State
-- **Branch:** main at 50094ee
-- **Tests:** No test suite exists for the WP plugin
-- **Build:** n/a (no build step for WP plugin)
-- **Uncommitted changes:** .claude/settings.local.json (not session-related), public_html submodule (not session-related)
-- **Interactive briefs:** saved locally at `.interactive-briefs/` and `A:/.openclaw/.interactive-briefs/` but strategic plan brief needs regenerating after rewrite
+- **Branch:** main (uncommitted changes — documentation transition)
+- **Tests:** No test suite (SaaS rebuild starts fresh next session)
+- **Build:** n/a (monorepo not scaffolded yet)
+- **All reference docs:** Medinova-ready, NestJS/Next.js/PostgreSQL throughout
+- **All rules:** TypeScript/NestJS, zero PHP/WordPress references
+- **Interactive brief:** Ready for review at A:/.openclaw/.interactive-briefs/
 
 ## Known Issues / Blockers
-- STRATEGIC-PLAN.md reflects the two-track architecture (WP for Gaza + Next.js for commercial). Bean decided standalone SaaS first. Plan must be fully rewritten.
-- ROADMAP.md is stale (written March 2026, assumes WP-plugin-first). Needs full rewrite.
-- DECISION-BRIEF.md has factual errors: says KiviCare is WP-only (it has a Flutter app), frames Arabic as the primary language differentiator (should be 10+ languages).
-- The interactive brief at `A:/.openclaw/.interactive-briefs/2026-03-22-helpingdoctors-strategic-plan.html` reflects the old two-track plan. Must be regenerated after the strategic plan rewrite.
+- Domain availability for "medinova" not yet verified (medinova.com, medinova.health, getmedinova.com)
+- Biomedical Catalyst current round may be closed. Next round likely summer 2026
+- Monorepo not yet scaffolded — that's the next session's primary task
 
 ## Next Priorities (in order)
-1. **Rewrite STRATEGIC-PLAN.md** for standalone SaaS architecture. Tech stack decision needed (Laravel + Next.js? Next.js full-stack? Other?). Research the best stack for a healthcare SaaS built by one person with Claude/OpenClaw. Then rewrite the 16-week plan.
-2. **Generate new interactive brief** from the rewritten plan and save to `A:/.openclaw/.interactive-briefs/`. Delete or archive the outdated one.
-3. **Update ROADMAP.md, CLAUDE.md, BUSINESS-MODEL.md** to reflect standalone SaaS direction. Remove all WP-plugin-first assumptions.
-4. **Begin implementation** of the standalone SaaS based on the new plan — starting with architecture scaffolding and security patterns ported from the existing codebase.
-5. **SBRI grant application** — Claude drafts, Bean reviews. Working MVP demo + DTAC submission strengthens the application.
+1. **Commit documentation transition** — stage all changes, commit to main or feature branch
+2. **Scaffold Medinova monorepo** — pnpm workspaces, Turborepo, apps/api (NestJS), apps/web (Next.js), packages/contracts, packages/db, packages/ui, packages/config
+3. **Set up CI/CD** — GitHub Actions: lint, type-check, test, build
+4. **Create Drizzle schema** — shared tables (tenants, users, roles, permissions, user_tenants) + tenant schema template (patients, appointments, encounters, etc.)
+5. **Verify `pnpm dev` runs** — both API and web apps start successfully
+6. **Check domain availability** — medinova.com, medinova.health, getmedinova.com, medinova.io
 
-## Files Modified
+## Files Modified This Session
 | File path | What changed |
 |-----------|-------------|
-| DECISION-BRIEF.md | Created — deep research findings, 7 decisions, competitive analysis |
-| STRATEGIC-PLAN.md | Created — 76-task 16-week plan (OUTDATED — needs rewrite for standalone SaaS) |
-| .claude/CLAUDE.md | Updated — added March 2026 strategic decisions section |
-| .interactive-briefs/2026-03-21-decision-brief.html | Created — interactive decision brief |
-| .interactive-briefs/2026-03-22-strategic-plan.html | Created — interactive strategic plan brief (OUTDATED) |
-| .gitignore | Updated — added .interactive-briefs/ |
+| CLAUDE.md (root) | Rewritten — now redirects to .claude/CLAUDE.md |
+| .claude/rules/03-medical-security.md | Rewritten for NestJS/TypeScript |
+| .claude/rules/05-frontend-first.md | Rewritten for Next.js App Router |
+| .claude/rules/06-dashboard-widgets.md | Rewritten for React + react-grid-layout |
+| .claude/rules/07-offline-first.md | Rewritten for Serwist/idb/Next.js PWA |
+| .claude/rules/08-accessibility.md | Rewritten for React/JSX + axe-core |
+| .claude/rules/10-database-patterns.md | Rewritten for Drizzle ORM + PostgreSQL |
+| .claude/rules/11-testing.md | Rewritten for Jest + Supertest + Vitest |
+| .claude/rules/12-error-handling.md | Rewritten for NestJS exception filters |
+| .claude/rules/13-icd11-codes.md | Rewritten for NestJS HttpService |
+| .claude/rules/14-shifa-bot.md | Created — Shifa Bot rule (AWS Bedrock) |
+| .claude/rules/16-humanitarian-context.md | Updated for NestJS/Next.js stack |
+| 40+ old .md files | Deleted (WP-era docs and reports) |
+| .claude/rules/01,02,04,09,14-old,15 | Deleted (WP-only rules) |
+| A:/.openclaw/.interactive-briefs/*.html | 4 deleted, 1 created |
 
 ## Notes for Next Session
-- Bean's priorities are quality, reliability, sellability, UX, positive surprises. NOT speed. OpenClaw builds 24/7 so time constraints from the research (15 hrs/week) are wrong.
-- Bean is in debt. Commercial side must come first. No AWS or charity deployments without revenue or grant funding.
-- KiviCare has a Flutter app (not WP-only). Language support is 10+ languages (not just Arabic/English). Both corrections saved to memory.
-- The existing 207 PHP files have valuable business logic (encryption, audit logging, FHIR, permissions, ICD-11) that should be mined for the SaaS rebuild, but the WP-specific code (hooks, shortcodes, wp_ajax, $wpdb) won't port directly.
-- Schema-per-tenant PostgreSQL is the correct multi-tenancy model. MySQL/WP multisite prefix has zero tenant isolation.
+- Review the interactive brief before starting: `A:/.openclaw/.interactive-briefs/2026-03-24-medinova-strategic-plan.html` — 4 decisions need your input (market entry is blocking)
+- The monorepo scaffold should follow FILE-MAP.md exactly
+- Use Context7 MCP to get current NestJS 11, Drizzle ORM, and ts-rest docs before scaffolding
+- Start with `pnpm init` + workspace config, then scaffold apps and packages in parallel
 
 ## Next Session Prompt
 
 ~~~
 /using-superpowers
 
-Read CONVERSATION-HANDOFF.md and CLAUDE.md for full context, then work through these priorities:
+Read CONVERSATION-HANDOFF.md and .claude/CLAUDE.md for full context. This session: scaffold the Medinova monorepo.
 
 ## Skills to Invoke
 
-| Skill | When to use |
-|-------|-------------|
-| `/using-superpowers` | FIRST — before any response |
-| `/research-buddies` | Task 1 — research best SaaS tech stack for healthcare (Laravel vs Next.js vs other) |
-| `/software-architecture` | Task 2 — design Clean Architecture for the standalone SaaS |
-| `/strategic-plan` | Task 3 — rewrite STRATEGIC-PLAN.md for standalone SaaS |
-| `/interactive-brief` | Task 4 — generate new brief from rewritten plan, save to A:/.openclaw/.interactive-briefs/ |
-| `/claude-md-management:revise-claude-md` | Task 5 — update CLAUDE.md to reflect standalone SaaS direction |
-| `/gap-analysis` | After each task — quality gate before proceeding |
+| Skill | When |
+|-------|------|
+| `/using-superpowers` | FIRST |
+| `/strategic-plan` | Reference — read STRATEGIC-PLAN.md for module list |
+| `/software-architecture` | Reference — read ARCHITECTURE.md for layer design |
+| `/test-driven-development` | When writing first tests |
 
 ## MCP Servers & Tools
 
-| Tool | What to use it for |
-|------|-------------------|
-| Firecrawl | Research SaaS tech stacks, competitor architectures, healthcare SaaS patterns |
-| Context7 | Get current docs for Next.js 15, Laravel 11, shadcn/ui, PowerSync |
-| Memory MCP | Update OpenClaw entities after plan rewrite |
-| GitHub MCP | Search for healthcare SaaS boilerplate repos, reference architectures |
+| Tool | What for |
+|------|----------|
+| Context7 | Current docs: NestJS 11, Drizzle ORM, ts-rest, next-intl, Serwist |
+| GitHub MCP | Create the medinova repository |
 
-## Agents to Delegate To
+## Agents
 
 | Agent | When |
 |-------|------|
-| `feature-dev:code-architect` | Design the standalone SaaS architecture blueprint |
-| `feature-dev:code-explorer` | Audit existing PHP codebase for portable business logic |
-| `test-and-explain` | Validate architecture decisions |
+| `feature-dev:code-architect` | Design NestJS module structure |
+| `test-and-explain` | After scaffold — verify pnpm dev works |
 
-## Research Approach
-1. Search: "best tech stack healthcare SaaS 2026 solo developer"
-2. Search: "Laravel vs Next.js healthcare application comparison"
-3. Search: "healthcare SaaS boilerplate open source 2025 2026"
-4. Check what Pabau, Dentally, Semble use (job postings, stackshare, GitHub)
-5. Check Context7 for Next.js 15 App Router + Laravel 11 latest patterns
+## Tasks (in order)
 
----
-
-## Task 1: Research and decide SaaS tech stack
-Use `/research-buddies` to determine: Laravel backend + Next.js frontend? Next.js full-stack? Something else? Consider: Bean is a non-coder, OpenClaw/Claude builds everything, quality > speed, needs FHIR, needs multi-tenancy, needs offline-first later, needs native mobile app later. Run `/gap-analysis` on output.
-
-## Task 2: Design standalone SaaS architecture
-Use `/software-architecture` + `feature-dev:code-architect` agent. Design Clean Architecture with: auth layer, patient data layer, appointment layer, prescription layer, lab layer, FHIR facade, Shifa Bot integration point, WP connector API. Run `/gap-analysis` on output.
-
-## Task 3: Rewrite STRATEGIC-PLAN.md
-Use `/strategic-plan`. Rewrite the 16-week plan for standalone SaaS. Reference what business logic to port from existing PHP codebase. Update ROADMAP.md and BUSINESS-MODEL.md. Run `/gap-analysis` on output.
-
-## Task 4: Generate interactive brief + update OpenClaw
-Use `/interactive-brief` on the rewritten plan. Save to A:/.openclaw/.interactive-briefs/. Delete or archive the outdated 2026-03-22-helpingdoctors-strategic-plan.html. Update Memory MCP entities.
-
-## Task 5: Update project docs
-Use `/claude-md-management:revise-claude-md` to update CLAUDE.md. Remove WP-plugin-first assumptions. Add standalone SaaS architecture section. Update DECISION-BRIEF.md to fix the KiviCare Flutter and language scope errors.
+1. **Create GitHub repo** — `medinova` under Bean's account. Private. MIT licence
+2. **Scaffold monorepo** — follow FILE-MAP.md structure exactly:
+   - Root: pnpm-workspace.yaml, turbo.json, tsconfig.base.json, .env.example
+   - apps/api/ — NestJS 11 app with module structure per ARCHITECTURE.md
+   - apps/web/ — Next.js 15 app with App Router, shadcn/ui, next-intl
+   - packages/contracts/ — ts-rest API contracts
+   - packages/db/ — Drizzle schema + migrations per DATABASE-SCHEMA.md
+   - packages/ui/ — shared React components
+   - packages/config/ — shared ESLint, TypeScript, Prettier configs
+3. **Configure CI/CD** — GitHub Actions: lint, type-check, test, build on PR
+4. **Create Drizzle schema** — shared tables first (tenants, users, roles, permissions, user_tenants)
+5. **Verify** — `pnpm install && pnpm dev` starts both apps. `pnpm test` runs (even if no tests yet)
+6. **Gate check** — `pnpm dev` runs, DB migrations work, CI passes
 
 ## Guardrails
-- Do NOT build on top of the existing WordPress plugin. Mine it for business logic only.
-- Bean's priorities: quality, reliability, sellability, UX. NOT speed.
-- OpenClaw builds 24/7 — do not constrain plans to 15 hrs/week.
-- Commercial first. No charity deployments without revenue or grant funding.
-- Schema-per-tenant PostgreSQL. Not MySQL multisite prefix.
-- 10+ languages from launch. Not just Arabic/English.
-- Patient app = native (App Store/Play Store). Staff app = web is fine.
-- Shifa Bot = FAQ + booking only. No clinical decisions (avoids MHRA SaMD).
+- Product: Medinova. AI: Shifa Bot. Charity: HelpingDoctors.org
+- Never suggest interest-bearing loans (haram)
+- Schema-per-tenant PostgreSQL. Not MySQL
+- Claude via AWS Bedrock. Not Cloudflare Workers AI
+- Quality > speed. Complete implementations only
+- UK English always
 ~~~

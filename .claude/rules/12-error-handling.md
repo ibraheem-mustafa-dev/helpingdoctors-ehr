@@ -1,111 +1,139 @@
 # Error Handling
 
-**Project:** HelpingDoctors EHR Pro
+**Project:** Medinova
 **Principle:** Fail gracefully, log thoroughly, never expose internals
-
----
-
-## Error Handling Pattern
-
-```php
-try {
-    $result = hd_process_patient_data($data);
-} catch (HD_Validation_Exception $e) {
-    // User-correctable error
-    hd_add_notice($e->getMessage(), 'error');
-    return;
-} catch (HD_Database_Exception $e) {
-    // System error - log and show generic message
-    hd_log_error($e);
-    hd_add_notice('Unable to save. Please try again.', 'error');
-    return;
-} catch (Exception $e) {
-    // Unexpected error
-    hd_log_error($e, 'critical');
-    hd_add_notice('An unexpected error occurred.', 'error');
-    return;
-}
-```
 
 ---
 
 ## Custom Exception Classes
 
-```php
-class HD_Exception extends Exception {}
-class HD_Validation_Exception extends HD_Exception {}
-class HD_Database_Exception extends HD_Exception {}
-class HD_Permission_Exception extends HD_Exception {}
-class HD_Feature_Not_Implemented extends HD_Exception {}
+```typescript
+// packages/contracts/src/exceptions.ts
+import { HttpException, HttpStatus } from '@nestjs/common';
+
+export class ValidationException extends HttpException {
+  constructor(message: string, details?: Record<string, string[]>) {
+    super({ statusCode: 422, message, error: 'Validation Error', details }, 422);
+  }
+}
+
+export class PermissionException extends HttpException {
+  constructor(message = 'You do not have permission to perform this action.') {
+    super({ statusCode: 403, message, error: 'Forbidden' }, HttpStatus.FORBIDDEN);
+  }
+}
+
+export class PatientNotFoundException extends HttpException {
+  constructor() {
+    super({ statusCode: 404, message: 'Patient not found.', error: 'Not Found' }, 404);
+  }
+}
 ```
 
 ---
 
-## Logging
+## Global Exception Filter
 
-```php
-function hd_log_error($exception, $level = 'error') {
-    $log_entry = [
-        'timestamp' => current_time('mysql'),
-        'level'     => $level,
-        'message'   => $exception->getMessage(),
-        'file'      => $exception->getFile(),
-        'line'      => $exception->getLine(),
-        'trace'     => $exception->getTraceAsString(),
-        'user_id'   => get_current_user_id(),
-        'ip'        => hd_get_client_ip()
-    ];
-    
-    // Log to database
-    global $wpdb;
-    $wpdb->insert($wpdb->prefix . 'hd_error_log', $log_entry);
-    
-    // Also log to file for critical errors
-    if ($level === 'critical') {
-        error_log(json_encode($log_entry));
+```typescript
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  constructor(
+    private readonly auditService: AuditService,
+    private readonly logger: Logger,
+  ) {}
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    const status = exception instanceof HttpException
+      ? exception.getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const body = exception instanceof HttpException
+      ? exception.getResponse()
+      : { statusCode: 500, message: 'An unexpected error occurred.', error: 'Internal Server Error' };
+
+    // Log all 5xx errors to audit trail
+    if (status >= 500) {
+      this.logger.error(exception);
+      this.auditService.logError({
+        userId: request.user?.id,
+        path: request.url,
+        method: request.method,
+        statusCode: status,
+        message: exception instanceof Error ? exception.message : 'Unknown error',
+        stack: exception instanceof Error ? exception.stack : undefined,
+      });
     }
+
+    response.status(status).json(body);
+  }
 }
 ```
+
+Register globally in `main.ts`: `app.useGlobalFilters(new GlobalExceptionFilter(auditService, logger));`
+
+---
+
+## Standard Error Response Shape
+
+All API errors return this shape (enforced by ts-rest contracts):
+
+```typescript
+{
+  statusCode: number;   // HTTP status code
+  message: string;      // Human-readable, safe for display
+  error?: string;       // Error category (e.g. "Validation Error")
+  details?: Record<string, string[]>; // Field-level errors (validation only)
+}
+```
+
+---
+
+## Controller Usage
+
+```typescript
+@Post()
+async createPatient(@Body() dto: CreatePatientDto): Promise<PatientResponse> {
+  // Validation handled by Zod pipe — throws ValidationException automatically
+  // Permission handled by @Roles() guard — throws PermissionException automatically
+  // Service throws domain exceptions — filter catches them
+  return this.patientService.create(dto);
+}
+```
+
+Controllers stay thin. Never try-catch in controllers unless you need to transform an error.
 
 ---
 
 ## User-Facing Messages
 
-### ✅ Good Messages
-- "Patient record saved successfully."
-- "Unable to save. Please check the highlighted fields."
-- "Session expired. Please log in again."
+**Good:** "Patient record saved successfully." / "Unable to save. Please check the highlighted fields." / "Session expired. Please log in again."
 
-### ❌ Bad Messages
-- "Error: SQLSTATE[23000]: Integrity constraint violation"
-- "Fatal error in /var/www/includes/class-patient.php line 234"
-- "undefined index: patient_id"
+**Bad:** Stack traces, SQL errors, file paths, internal class names. Never expose these.
 
 ---
 
-## AJAX Error Responses
+## Patient Data in Errors
 
-```php
-// Standardised AJAX error response
-function hd_ajax_error($message, $code = 'error') {
-    wp_send_json_error([
-        'code'    => $code,
-        'message' => $message
-    ], 400);
-}
+Never include patient names, MRN, DOB, or any PHI in error messages or logs. Use IDs only.
 
-// Usage
-if (!hd_user_can_edit_patient($patient_id)) {
-    hd_ajax_error('You do not have permission to edit this patient.', 'permission_denied');
-}
+```typescript
+// WRONG
+throw new Error(`Patient ${patient.firstName} ${patient.lastName} not found`);
+
+// CORRECT
+throw new PatientNotFoundException(); // Generic message, no PHI
 ```
 
 ---
 
 ## Checklist
 
-- [ ] Using try-catch for risky operations?
-- [ ] Logging errors with context?
-- [ ] User messages are helpful, not technical?
-- [ ] Never exposing stack traces to users?
-- [ ] AJAX errors use standard format?
+- [ ] Custom exceptions extend HttpException with standard shape?
+- [ ] Global filter catches all unhandled exceptions?
+- [ ] 5xx errors logged to audit trail?
+- [ ] No PHI in error messages or logs?
+- [ ] User-facing messages are helpful, not technical?

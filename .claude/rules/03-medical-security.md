@@ -1,121 +1,145 @@
 # Medical Data Security
 
-**Project:** HelpingDoctors EHR Pro
-**Compliance:** HIPAA, GDPR, UK Data Protection Act
+**Project:** Medinova
+**Compliance:** GDPR, HIPAA-aligned, UK DPA 2018
+**Stack:** NestJS 11 + Drizzle ORM + PostgreSQL 16
 
 ---
 
 ## Core Principles
 
-1. **Encrypt at rest** - AES-256-GCM for sensitive data
-2. **Audit everything** - All access logged
-3. **Soft delete** - Never hard delete medical records
-4. **Minimum privilege** - Role-based access control
+1. **Encrypt at rest** — AES-256-GCM for all PHI (per-tenant keys via AWS KMS)
+2. **Audit everything** — All PHI access auto-logged via NestJS Interceptor
+3. **Soft delete** — Never hard delete medical records
+4. **Minimum privilege** — 27 RBAC roles enforced via NestJS Guards
 
 ---
 
-## Encryption
+## EncryptionService
 
-### Using the Encryption Helper
-```php
-// Encrypt sensitive data before storage
-$encrypted = hd_encrypt($patient_data, HD_ENCRYPTION_KEY);
+```typescript
+// apps/api/src/modules/security/encryption.service.ts
+@Injectable()
+export class EncryptionService {
+  async encrypt(plaintext: string, tenantId: string): Promise<EncryptedField> {
+    const key = await this.getKey(tenantId); // AWS KMS
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return { encrypted, iv, tag }; // stored as bytea columns
+  }
 
-// Decrypt when retrieving
-$decrypted = hd_decrypt($encrypted_data, HD_ENCRYPTION_KEY);
+  async decrypt(field: EncryptedField, tenantId: string): Promise<string> {
+    const key = await this.getKey(tenantId);
+    const decipher = createDecipheriv('aes-256-gcm', key, field.iv);
+    decipher.setAuthTag(field.tag);
+    return decipher.update(field.encrypted) + decipher.final('utf8');
+  }
+}
 ```
 
-### What MUST Be Encrypted
-- Patient names
-- Contact information
-- Medical conditions
-- Prescriptions
-- Lab results
-- Any PII (Personally Identifiable Information)
+### What MUST be encrypted (bytea columns)
+- Patient names, contact info, addresses
+- Medical conditions, diagnoses, prescriptions
+- Lab results, clinical notes
+- Any PII / PHI
 
-### What Can Be Plain Text
-- Appointment times (without patient details)
-- System configuration
-- Non-identifying statistics
+### What stays plain text
+- Appointment times (without patient details), system config, anonymised statistics
 
 ---
 
-## Audit Logging
+## Audit Logging — @Audited() Decorator
 
-### Every Sensitive Action Must Be Logged
-```php
-hd_audit_log([
-    'action'      => 'patient_record_viewed',
-    'user_id'     => get_current_user_id(),
-    'patient_id'  => $patient_id,
-    'ip_address'  => hd_get_client_ip(),
-    'timestamp'   => current_time('mysql'),
-    'details'     => 'Viewed patient demographics'
-]);
+```typescript
+// Usage on any controller method that accesses PHI
+@Get(':id')
+@Roles('physician', 'registered_nurse')
+@Audited('patient_record_viewed')
+async getPatient(@Param('id') id: string) {
+  return this.patientService.findById(id);
+}
+
+// The AuditInterceptor auto-captures:
+// - action, userId, tenantId, patientId, IP, timestamp, userAgent
+// - Writes to audit_logs table in tenant schema
 ```
 
-### Actions That MUST Be Logged
+### Actions that MUST be audited
 - Patient record access (view, edit, create)
 - Prescription creation/modification
-- User login/logout
-- Permission changes
-- Data exports
-- Failed access attempts
+- Login/logout, failed auth attempts
+- Permission changes, data exports
+- GDPR subject access requests
 
 ---
 
-## Soft Delete
+## Soft Delete — Drizzle Pattern
 
-### NEVER Hard Delete Medical Records
-```php
-// WRONG - Hard delete
-$wpdb->delete($table, ['id' => $record_id]);
+```typescript
+// Every patient-data query MUST filter soft deletes
+const patients = await db
+  .select()
+  .from(schema.patients)
+  .where(isNull(schema.patients.deletedAt)); // ALWAYS
 
-// CORRECT - Soft delete
-$wpdb->update(
-    $table,
-    [
-        'deleted_at' => current_time('mysql'),
-        'deleted_by' => get_current_user_id()
-    ],
-    ['id' => $record_id]
-);
+// Soft delete — never use db.delete() on medical records
+await db
+  .update(schema.patients)
+  .set({ deletedAt: new Date(), deletedBy: userId })
+  .where(eq(schema.patients.id, patientId));
 ```
 
-### Include in All Queries
-```php
-// WRONG - Returns deleted records
-$patients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}hd_patients");
-
-// CORRECT - Excludes deleted records
-$patients = $wpdb->get_results(
-    "SELECT * FROM {$wpdb->prefix}hd_patients WHERE deleted_at IS NULL"
-);
-```
+**Hard rule:** If you write a Drizzle query on any patient/clinical table without `.where(isNull(...deletedAt))`, it is a bug.
 
 ---
 
-## Role-Based Access
+## RBAC — NestJS Guards
 
-### Check Permissions Before Every Action
-```php
-// Before showing patient data
-if (!hd_user_can_view_patient($user_id, $patient_id)) {
-    wp_die('Access denied');
-}
+```typescript
+// Controller-level role protection
+@Controller('patients')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class PatientController {
+  @Get()
+  @Roles('physician', 'registered_nurse', 'medical_assistant')
+  findAll() { /* ... */ }
 
-// Before editing prescriptions
-if (!hd_user_can_prescribe()) {
-    wp_die('You do not have permission to prescribe');
+  @Post()
+  @Roles('physician', 'receptionist')
+  create(@Body() dto: CreatePatientDto) { /* ... */ }
 }
+```
+
+Use the 27 roles from the RBAC system. Never bypass Guards with hardcoded checks.
+
+---
+
+## Blind Index Search
+
+```typescript
+// Searchable encrypted fields use HMAC-SHA256 blind indexes
+const blindIndex = createHmac('sha256', tenantHmacKey)
+  .update(searchTerm.toLowerCase().trim())
+  .digest('hex');
+
+const results = await db
+  .select()
+  .from(schema.patients)
+  .where(and(
+    eq(schema.patients.nameBlindIndex, blindIndex),
+    isNull(schema.patients.deletedAt),
+  ));
 ```
 
 ---
 
 ## Checklist
 
-- [ ] Sensitive data encrypted with hd_encrypt()?
-- [ ] Action logged to audit trail?
-- [ ] Using soft delete, not hard delete?
-- [ ] Permission checked before access?
-- [ ] Deleted records excluded from queries?
+- [ ] PHI fields encrypted via EncryptionService?
+- [ ] Controller method decorated with @Audited()?
+- [ ] Soft delete only — no db.delete() on clinical tables?
+- [ ] @Roles() guard on every endpoint?
+- [ ] deletedAt IS NULL in every patient-data query?
+- [ ] Blind indexes for searchable encrypted fields?

@@ -1,13 +1,8 @@
 # Offline-First Architecture
 
-**Project:** HelpingDoctors EHR Pro
-**Context:** Humanitarian deployments, Gaza clinics, unreliable connectivity
-
----
-
-## Core Principle
-
-System MUST work offline. Gaza clinics operate with intermittent 2G/3G connectivity. Every feature must degrade gracefully when offline.
+**Project:** Medinova
+**Context:** Humanitarian deployments (Gaza), unreliable 2G/3G connectivity
+**Stack:** Next.js 15 PWA (Serwist) + idb + TypeScript
 
 ---
 
@@ -15,165 +10,161 @@ System MUST work offline. Gaza clinics operate with intermittent 2G/3G connectiv
 
 ```
 Online Mode
-    ↓ (network loss)
+    -> (network loss)
 Offline Mode (Service Worker + IndexedDB)
-    ↓ (network restored)
-Sync Mode (Queue processing)
-    ↓ (complete)
+    -> (network restored)
+Sync Mode (queue processing)
+    -> (complete)
 Online Mode
 ```
 
 ---
 
-## Service Worker
+## PWA Setup — Serwist (next-pwa successor)
 
-```javascript
-// sw.js - Cache critical assets
-const CACHE_NAME = 'hd-ehr-v1';
-const CRITICAL_ASSETS = [
-    '/',
-    '/staff-dashboard/',
-    '/patients/',
-    '/appointments/',
-    '/assets/css/main.css',
-    '/assets/js/app.js',
-    '/assets/js/offline.js'
-];
+```typescript
+// apps/web/next.config.ts
+import withSerwist from '@serwist/next';
 
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(CRITICAL_ASSETS))
-    );
+export default withSerwist({
+  swSrc: 'src/sw.ts',
+  swDest: 'public/sw.js',
+  cacheOnNavigation: true,
+  revalidates: '/api/',
+})(nextConfig);
+```
+
+```typescript
+// apps/web/src/sw.ts — service worker entry
+import { defaultCache } from '@serwist/next/worker';
+import { Serwist } from 'serwist';
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  runtimeCaching: defaultCache,
+  skipWaiting: true,
+  clientsClaim: true,
 });
 
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => response || fetch(event.request))
-            .catch(() => caches.match('/offline.html'))
-    );
-});
+serwist.addEventListeners();
 ```
 
 ---
 
-## IndexedDB Storage
+## IndexedDB — Offline Data Store (idb)
 
-```javascript
-// Local database schema
-const DB_SCHEMA = {
-    patients: {
-        keyPath: 'id',
-        indexes: ['name', 'mrn', 'updated_at']
-    },
-    appointments: {
-        keyPath: 'id',
-        indexes: ['patient_id', 'date', 'status']
-    },
-    prescriptions: {
-        keyPath: 'id',
-        indexes: ['patient_id', 'created_at']
-    },
-    sync_queue: {
-        keyPath: 'id',
-        autoIncrement: true,
-        indexes: ['action', 'status', 'created_at']
-    }
-};
-```
+```typescript
+// packages/ui/src/lib/offline-db.ts
+import { openDB, type DBSchema } from 'idb';
 
----
-
-## Sync Queue
-
-All offline changes go to sync queue:
-
-```javascript
-// Queue an action for sync
-async function queueForSync(action, data) {
-    const db = await openDatabase();
-    await db.add('sync_queue', {
-        action: action,          // 'create_patient', 'update_appointment'
-        data: data,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        retry_count: 0
-    });
+interface MedinovaOfflineDB extends DBSchema {
+  patients: { key: string; value: PatientSummary; indexes: { mrn: string } };
+  appointments: { key: string; value: AppointmentSummary; indexes: { date: string } };
+  syncQueue: { key: number; value: SyncQueueItem; indexes: { status: string } };
 }
 
-// Process queue when online
-async function processQueue() {
-    if (!navigator.onLine) return;
-    
-    const db = await openDatabase();
-    const pending = await db.getAll('sync_queue', 'pending');
-    
-    for (const item of pending) {
-        try {
-            await sendToServer(item);
-            await db.delete('sync_queue', item.id);
-        } catch (error) {
-            item.retry_count++;
-            item.status = item.retry_count > 3 ? 'failed' : 'pending';
-            await db.put('sync_queue', item);
-        }
-    }
+export async function getOfflineDB() {
+  return openDB<MedinovaOfflineDB>('medinova-offline', 1, {
+    upgrade(db) {
+      const patients = db.createObjectStore('patients', { keyPath: 'id' });
+      patients.createIndex('mrn', 'mrn', { unique: true });
+
+      const appointments = db.createObjectStore('appointments', { keyPath: 'id' });
+      appointments.createIndex('date', 'date');
+
+      const queue = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
+      queue.createIndex('status', 'status');
+    },
+  });
 }
 ```
 
 ---
 
-## UI Indicators
+## Sync Queue — Offline Mutations
 
-Always show connectivity status:
+```typescript
+// packages/ui/src/lib/sync-queue.ts
+interface SyncQueueItem {
+  id?: number;
+  action: string;          // 'create_patient', 'update_appointment'
+  endpoint: string;        // ts-rest route key
+  payload: unknown;
+  status: 'pending' | 'failed';
+  createdAt: string;
+  retryCount: number;
+}
 
-```html
-<div id="connectivity-status" class="connectivity-banner">
-    <span class="status-icon"></span>
-    <span class="status-text"></span>
-</div>
-```
+export async function queueMutation(action: string, endpoint: string, payload: unknown) {
+  const db = await getOfflineDB();
+  await db.add('syncQueue', {
+    action, endpoint, payload,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    retryCount: 0,
+  });
+}
 
-```javascript
-// Update UI based on connectivity
-function updateConnectivityUI() {
-    const banner = document.getElementById('connectivity-status');
-    const pendingCount = await getPendingQueueCount();
-    
-    if (navigator.onLine) {
-        if (pendingCount > 0) {
-            banner.className = 'connectivity-banner syncing';
-            banner.querySelector('.status-text').textContent = 
-                `Syncing ${pendingCount} changes...`;
-        } else {
-            banner.className = 'connectivity-banner online';
-            banner.querySelector('.status-text').textContent = 'Online';
-        }
-    } else {
-        banner.className = 'connectivity-banner offline';
-        banner.querySelector('.status-text').textContent = 
-            'Offline - Changes will sync when connected';
+export async function processQueue() {
+  if (!navigator.onLine) return;
+  const db = await getOfflineDB();
+  const pending = await db.getAllFromIndex('syncQueue', 'status', 'pending');
+
+  for (const item of pending) {
+    try {
+      await sendToServer(item);
+      await db.delete('syncQueue', item.id!);
+    } catch {
+      item.retryCount++;
+      item.status = item.retryCount > 3 ? 'failed' : 'pending';
+      await db.put('syncQueue', item);
     }
+  }
 }
 ```
 
 ---
 
-## Critical for Humanitarian Use
+## useNetworkStatus Hook
 
-- **Paper record OCR** - 5000+ paper records need digitising
-- **Arabic language** - 80% of patients speak Arabic
-- **Low bandwidth** - Optimise for 2G/3G
-- **Battery saving** - Efficient sync scheduling
-- **Conflict resolution** - Handle sync conflicts gracefully
+```typescript
+// packages/ui/src/hooks/use-network-status.ts
+'use client';
+export function useNetworkStatus() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const onOnline = () => { setIsOnline(true); processQueue(); };
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
+  }, []);
+
+  return { isOnline, pendingCount, isSyncing: isOnline && pendingCount > 0 };
+}
+```
+
+Use `<ConnectivityBanner />` in the dashboard layout to show online/offline/syncing state.
+
+---
+
+## Humanitarian Constraints
+
+- **Low bandwidth** — compress all assets, lazy-load images, cache aggressively
+- **Battery saving** — batch sync, debounce writes, avoid polling
+- **10+ languages** — cache translation bundles in service worker
+- **Conflict resolution** — last-write-wins with server timestamp; flag conflicts for manual review
+- **OCR queue** — paper record scans stored locally, uploaded when online
 
 ---
 
 ## Checklist
 
-- [ ] Service worker caches critical assets?
-- [ ] IndexedDB stores offline data?
-- [ ] Sync queue handles offline changes?
-- [ ] UI shows connectivity status?
-- [ ] Graceful degradation when offline?
+- [ ] Serwist configured for asset precaching?
+- [ ] IndexedDB schema covers all offline-needed entities?
+- [ ] Mutations queued when offline (not dropped)?
+- [ ] processQueue() runs on reconnect?
+- [ ] ConnectivityBanner visible in dashboard layout?
+- [ ] Graceful degradation — read works offline, writes queued?

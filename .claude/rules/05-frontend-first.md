@@ -1,149 +1,133 @@
-# Frontend-First Architecture
+# Frontend Architecture — Next.js 15
 
-**Project:** HelpingDoctors EHR Pro
-**Principle:** Medical staff should NEVER need wp-admin
-
----
-
-## Core Principle
-
-This is a **frontend-first application**. All medical workflows happen on frontend pages. The WordPress admin (wp-admin) is for site administrators only, not clinical staff.
+**Project:** Medinova
+**Stack:** Next.js 15 App Router + shadcn/ui + Tremor + ts-rest
+**Principle:** Everything happens in the Next.js app. No separate admin panel.
 
 ---
 
-## Architecture
+## App Router Structure
 
 ```
-Public Website
-    └── Staff Login Page (/staff-login/)
-        └── Staff Dashboard (/staff-dashboard/)
-            ├── Patient Search
-            ├── Appointments
-            ├── Medical Records
-            ├── Prescriptions
-            ├── Lab Results
-            ├── Messaging
-            └── Reports
-
-wp-admin (Site Admins Only)
-    ├── User Management
-    ├── Plugin Settings
-    ├── System Configuration
-    └── Audit Logs
-```
-
----
-
-## Page Structure
-
-### 30 Frontend Pages
-All medical functionality exists as WordPress pages with custom templates:
-
-| Page | Template | Purpose |
-|------|----------|---------|
-| /staff-login/ | template-staff-login.php | UM login form |
-| /staff-dashboard/ | template-dashboard.php | Role-based dashboard |
-| /patients/ | template-patients.php | Patient management |
-| /appointments/ | template-appointments.php | Scheduling |
-| /prescriptions/ | template-prescriptions.php | E-prescribing |
-| /lab-results/ | template-lab.php | Laboratory |
-| /medical-records/ | template-records.php | Patient records |
-| /messaging/ | template-messaging.php | Secure messaging |
-| /video-consult/ | template-video.php | Telemedicine |
-
----
-
-## URL Structure
-
-```
-helpingdoctors.org/
-    ├── staff-login/           # Authentication
-    ├── staff-dashboard/       # Main entry point
-    ├── patients/              # Patient list
-    ├── patients/view/{id}/    # Patient detail
-    ├── patients/new/          # New patient
-    ├── appointments/          # Calendar
-    ├── appointments/new/      # Book appointment
-    └── ...
+apps/web/src/app/
+├── (auth)/                    # Public auth pages (no sidebar)
+│   ├── login/page.tsx
+│   ├── register/page.tsx
+│   ├── forgot-password/page.tsx
+│   └── layout.tsx             # Centred card layout
+├── (dashboard)/               # Authenticated app (sidebar + header)
+│   ├── layout.tsx             # Sidebar, header, role context
+│   ├── page.tsx               # Dashboard home (widgets)
+│   ├── patients/
+│   │   ├── page.tsx           # Patient list (Server Component)
+│   │   ├── [id]/page.tsx      # Patient detail
+│   │   └── new/page.tsx       # Create patient
+│   ├── appointments/
+│   ├── encounters/
+│   ├── prescriptions/
+│   ├── communications/
+│   ├── reports/
+│   └── settings/
+├── api/                       # Next.js API routes (BFF proxy only)
+└── layout.tsx                 # Root: providers, fonts, i18n
 ```
 
 ---
 
-## Implementation Pattern
+## Server vs Client Components
 
-### Template Files
-```php
-<?php
-/**
- * Template Name: Staff Dashboard
- */
+**Default to Server Components.** Only use `'use client'` when you need:
 
-// Check authentication
-if (!is_user_logged_in()) {
-    wp_redirect(home_url('/staff-login/'));
-    exit;
+| Use Server Component | Use Client Component (`'use client'`) |
+|---|---|
+| Data fetching, list pages | Forms, interactive inputs |
+| Static content, layouts | Drag-and-drop, modals, toasts |
+| Metadata, SEO | Real-time updates (WebSocket) |
+| Role-based content filtering | Client-side state (useState, useReducer) |
+
+```tsx
+// Server Component — fetches data, no interactivity
+export default async function PatientsPage() {
+  const patients = await api.patients.list.query({ query: { page: 1 } });
+  return <PatientTable data={patients.body.data} />;
 }
 
-// Check role
-$um_role = um_get_user_role(get_current_user_id());
-if (!hd_can_access_dashboard($um_role)) {
-    wp_die('Access denied');
-}
-
-get_header('staff');
-?>
-
-<main class="hd-dashboard">
-    <?php 
-    // Load role-specific dashboard
-    hd_render_dashboard($um_role);
-    ?>
-</main>
-
-<?php get_footer('staff'); ?>
-```
-
----
-
-## AJAX Handlers
-
-All data operations via AJAX:
-
-```php
-// Register AJAX handler
-add_action('wp_ajax_hd_search_patients', 'hd_search_patients_handler');
-
-function hd_search_patients_handler() {
-    // Verify nonce
-    check_ajax_referer('hd_nonce', 'nonce');
-    
-    // Check permission
-    if (!hd_user_can_search_patients()) {
-        wp_send_json_error('Permission denied');
-    }
-    
-    // Process request
-    $results = hd_search_patients($_POST['query']);
-    wp_send_json_success($results);
+// Client Component — interactive table with sorting/filtering
+'use client';
+export function PatientTable({ data }: { data: Patient[] }) {
+  const [sortBy, setSortBy] = useState<keyof Patient>('lastName');
+  return ( /* shadcn DataTable */ );
 }
 ```
 
 ---
 
-## Why Frontend-First?
+## Route Protection — Middleware
 
-1. **Simpler for clinical staff** - No wp-admin training needed
-2. **Better security** - Reduced attack surface
-3. **Custom UI** - Medical-optimised interface
-4. **Mobile-friendly** - Responsive design
-5. **Offline capability** - Service worker support
+```typescript
+// apps/web/src/middleware.ts
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('access_token')?.value;
+  const path = request.nextUrl.pathname;
+
+  // Public routes — no auth needed
+  if (path.startsWith('/(auth)') || path === '/') return NextResponse.next();
+
+  // No token — redirect to login
+  if (!token) return NextResponse.redirect(new URL('/login', request.url));
+
+  // Decode JWT, check role against route permissions
+  const payload = decodeJwt(token);
+  if (!hasRouteAccess(payload.role, path)) {
+    return NextResponse.redirect(new URL('/unauthorised', request.url));
+  }
+
+  return NextResponse.next();
+}
+```
+
+---
+
+## API Calls — ts-rest Client
+
+```typescript
+// All API calls go through the shared ts-rest contract
+import { client } from '@medinova/contracts';
+
+// Server Component — direct call
+const response = await client.patients.getById({ params: { id } });
+
+// Client Component — via React Query
+const { data, isLoading } = useQuery({
+  queryKey: ['patient', id],
+  queryFn: () => client.patients.getById({ params: { id } }),
+});
+```
+
+Never use raw `fetch()` to the API. Always use the ts-rest client so types are shared.
+
+---
+
+## Component Library
+
+- **shadcn/ui** — all form controls, tables, dialogs, cards, navigation
+- **Tremor** — charts, KPIs, analytics dashboards
+- **next-intl** — all user-facing strings (10+ languages from day 1)
+
+```tsx
+// All text via translation keys, never hardcoded
+import { useTranslations } from 'next-intl';
+const t = useTranslations('patients');
+return <h1>{t('title')}</h1>; // "Patients" / "المرضى" / etc.
+```
 
 ---
 
 ## Checklist
 
-- [ ] Feature implemented on frontend page?
-- [ ] No wp-admin dependency for medical workflows?
-- [ ] AJAX handlers for data operations?
-- [ ] Role-appropriate access control?
-- [ ] Mobile-responsive implementation?
+- [ ] Page is a Server Component unless interactivity requires client?
+- [ ] Route protected via middleware role check?
+- [ ] API calls use ts-rest client (not raw fetch)?
+- [ ] All user-facing strings use next-intl translation keys?
+- [ ] Using shadcn/ui components (not custom HTML)?
+- [ ] Mobile-first responsive (44px touch targets)?

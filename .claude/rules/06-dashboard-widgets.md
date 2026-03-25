@@ -1,184 +1,158 @@
 # Dashboard Widgets
 
-**Project:** HelpingDoctors EHR Pro
-**Count:** 53 widgets (NOT 16)
-**Customiser:** REQUIRED (not optional)
+**Project:** Medinova
+**Count:** 53 widgets across 8 categories
+**Stack:** React + shadcn/ui Cards + Tremor charts + drag-and-drop grid
 
 ---
 
-## Core Facts
+## Widget Categories (53 total)
 
-- **53 widgets** across 8 categories
-- **GridStack.js** for drag-and-drop
-- **Role-based** visibility
-- **Customiser is REQUIRED** functionality
-
----
-
-## Widget Categories (8)
-
-### 1. Clinical (12 widgets)
-- Today's Appointments
-- Recent Patients
-- Pending Lab Results
-- Active Prescriptions
-- Vital Signs Alerts
-- Unread Messages
-- Task List
-- Patient Queue
-- Emergency Alerts
-- Drug Interaction Warnings
-- Referral Status
-- Clinical Reminders
-
-### 2. Administrative (8 widgets)
-- Staff Schedule Overview
-- Room Availability
-- Appointment Statistics
-- Check-in Queue
-- Billing Summary
-- Insurance Verifications
-- Document Queue
-- Inventory Alerts
-
-### 3. Analytics (7 widgets)
-- Patient Flow Chart
-- Revenue Trends
-- Appointment Heatmap
-- No-Show Rate
-- Average Wait Time
-- Satisfaction Scores
-- Staff Productivity
-
-### 4. Patient Care (6 widgets)
-- Care Plan Status
-- Medication Adherence
-- Follow-up Due
-- Chronic Disease Tracking
-- Immunisation Schedule
-- Health Goals Progress
-
-### 5. Communication (5 widgets)
-- Message Centre
-- Team Chat
-- Announcements
-- Patient Messages
-- Referral Communications
-
-### 6. Humanitarian (5 widgets)
-- Mass Casualty Status
-- Outbreak Tracker
-- Resource Availability
-- Field Clinic Status
-- Vaccination Campaign
-
-### 7. System (5 widgets)
-- System Health
-- Sync Status
-- Audit Activity
-- User Sessions
-- Storage Usage
-
-### 8. Quick Actions (5 widgets)
-- New Patient
-- New Appointment
-- Quick Prescription
-- Quick Lab Order
-- Emergency Protocol
+| # | Category | Count | Examples |
+|---|---|---|---|
+| 1 | Clinical | 12 | Today's Appointments, Patient Queue, Drug Interaction Warnings |
+| 2 | Administrative | 8 | Staff Schedule, Room Availability, Check-in Queue |
+| 3 | Analytics | 7 | Patient Flow Chart, Revenue Trends, Appointment Heatmap |
+| 4 | Patient Care | 6 | Care Plan Status, Medication Adherence, Immunisation Schedule |
+| 5 | Communication | 5 | Message Centre, Team Chat, Patient Messages |
+| 6 | Humanitarian | 5 | Mass Casualty Status, Outbreak Tracker, Vaccination Campaign |
+| 7 | System | 5 | System Health, Sync Status, Audit Activity |
+| 8 | Quick Actions | 5 | New Patient, New Appointment, Quick Prescription |
 
 ---
 
-## GridStack Implementation
+## Widget Component Interface
 
-### Required Features
-```javascript
-// GridStack configuration
-const grid = GridStack.init({
-    column: 12,
-    cellHeight: 80,
-    animate: true,
-    draggable: {
-        handle: '.widget-header'
-    },
-    resizable: {
-        handles: 'e, se, s, sw, w'
-    }
-});
-
-// Save layout per user
-grid.on('change', function(event, items) {
-    saveUserLayout(items);
-});
-```
-
-### Layout Persistence
-```php
-// Save user's widget layout
-function hd_save_dashboard_layout($user_id, $layout) {
-    update_user_meta($user_id, 'hd_dashboard_layout', $layout);
+```typescript
+// packages/ui/src/widgets/types.ts
+export interface WidgetDefinition {
+  id: string;                          // 'clinical.todays-appointments'
+  title: string;                       // i18n key
+  category: WidgetCategory;
+  roles: MedicalRole[];                // Which roles see this widget
+  minW: number;                        // Minimum grid columns (1-12)
+  minH: number;                        // Minimum grid rows
+  defaultW: number;                    // Default width
+  defaultH: number;                    // Default height
+  refreshInterval?: number;            // Seconds (0 = no auto-refresh)
 }
 
-// Get user's widget layout
-function hd_get_dashboard_layout($user_id) {
-    return get_user_meta($user_id, 'hd_dashboard_layout', true);
+export interface WidgetProps {
+  definition: WidgetDefinition;
+  tenantId: string;
 }
 ```
 
 ---
 
-## Role Templates
+## Widget Implementation Pattern
 
-Default layouts per role:
+```tsx
+// Each widget is a Client Component using React Query for data
+'use client';
+export function TodaysAppointmentsWidget({ definition, tenantId }: WidgetProps) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['widget', definition.id, tenantId],
+    queryFn: () => client.appointments.today.query(),
+    refetchInterval: (definition.refreshInterval ?? 60) * 1000,
+  });
 
-| Role | Default Widgets |
-|------|-----------------|
-| Doctor | Clinical (all), Patient Care, Analytics |
-| Nurse | Clinical (selected), Patient Care, Tasks |
-| Receptionist | Administrative, Check-in Queue, Schedule |
-| Practice Manager | Analytics, Administrative, System |
+  if (isLoading) return <WidgetSkeleton definition={definition} />;
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>{t(definition.title)}</CardTitle></CardHeader>
+      <CardContent>
+        {/* Widget-specific content */}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+For analytics widgets, use **Tremor** components (BarChart, AreaChart, DonutChart, KPI cards).
 
 ---
 
-## Widget Structure
+## Dashboard Grid — Drag and Drop
 
-```php
-class HD_Widget_Base {
-    public $id;
-    public $title;
-    public $category;
-    public $min_width = 2;
-    public $min_height = 2;
-    public $default_width = 4;
-    public $default_height = 3;
-    public $roles = []; // Which roles can see this
-    public $refresh_interval = 60; // Seconds
-    
-    public function render() {
-        // Override in child class
-    }
-    
-    public function get_data() {
-        // Override in child class
-    }
+```tsx
+// apps/web/src/app/(dashboard)/page.tsx
+'use client';
+export function DashboardGrid({ userRole, savedLayout }: DashboardGridProps) {
+  const [layout, setLayout] = useState<LayoutItem[]>(
+    savedLayout ?? getDefaultLayout(userRole)
+  );
+
+  const handleLayoutChange = useDebouncedCallback((newLayout: LayoutItem[]) => {
+    setLayout(newLayout);
+    client.userPreferences.saveLayout.mutate({ body: { layout: newLayout } });
+  }, 500);
+
+  return (
+    <ResponsiveGridLayout
+      layouts={{ lg: layout }}
+      cols={{ lg: 12, md: 8, sm: 4, xs: 2 }}
+      rowHeight={80}
+      isDraggable
+      isResizable
+      draggableHandle=".widget-drag-handle"
+      onLayoutChange={handleLayoutChange}
+    >
+      {layout.map((item) => (
+        <div key={item.i}>
+          <WidgetRenderer widgetId={item.i} tenantId={tenantId} />
+        </div>
+      ))}
+    </ResponsiveGridLayout>
+  );
 }
+```
+
+Use `react-grid-layout` for the drag-and-drop grid. Responsive breakpoints: 12/8/4/2 columns.
+
+---
+
+## Layout Persistence
+
+Layouts are saved per user via the API:
+
+```typescript
+// POST /api/user-preferences/layout
+// Body: { layout: LayoutItem[] }
+// Stored in public.user_preferences table (JSONB column)
 ```
 
 ---
 
-## CRITICAL REMINDER
+## Role Default Layouts
 
-The GridStack customiser is **REQUIRED**, not optional:
-- Users MUST be able to drag widgets
-- Users MUST be able to resize widgets
-- Users MUST be able to show/hide widgets
-- Layout MUST persist per user
+| Role Group | Default Widgets |
+|---|---|
+| Physician Core | All Clinical, Patient Care, Analytics |
+| Nursing | Clinical (selected), Patient Care, Tasks |
+| Front Desk | Administrative, Check-in Queue, Schedule |
+| Clinic Management | Analytics, Administrative, System |
+| Humanitarian | Humanitarian, Clinical, Quick Actions |
+
+---
+
+## Customiser Panel — REQUIRED
+
+Users MUST be able to:
+- **Drag** widgets to reposition
+- **Resize** widgets within min/max bounds
+- **Show/hide** widgets via a customiser drawer
+- **Reset** to role default layout
 
 ---
 
 ## Checklist
 
-- [ ] All 53 widgets implemented?
-- [ ] GridStack drag-drop working?
-- [ ] Layout saves per user?
-- [ ] Role-based visibility working?
-- [ ] Customiser panel functional?
+- [ ] Widget uses WidgetProps interface?
+- [ ] Data fetched via React Query with refresh interval?
+- [ ] Analytics widgets use Tremor charts?
+- [ ] Grid layout responsive (12/8/4/2 columns)?
+- [ ] Layout persists via API on change?
+- [ ] Role-based default layout provided?
+- [ ] Customiser drawer for show/hide?

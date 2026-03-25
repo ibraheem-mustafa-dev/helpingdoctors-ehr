@@ -1,114 +1,114 @@
 # Database Patterns
 
-**Project:** HelpingDoctors EHR Pro
-**Engine:** MySQL (WordPress)
-**Tables:** 70+ custom tables with wp_X_hd_ prefix
+**Project:** Medinova
+**Stack:** Drizzle ORM + PostgreSQL 16
+**Multi-tenancy:** Schema-per-tenant
 
 ---
 
-## Table Naming
+## Schema Definition
 
-```php
-// Always use $wpdb->prefix for multisite support
-$table = $wpdb->prefix . 'hd_patients';
-// Results in: wp_3_hd_patients (for blog ID 3)
+```typescript
+// packages/db/src/schema/tenant/patients.ts
+import { pgTable, uuid, varchar, date, timestamp, bytea, index } from 'drizzle-orm/pg-core';
 
-// NEVER hardcode
-$table = 'wp_hd_patients';  // WRONG - missing blog ID
+export const patients = pgTable('patients', {
+  id: uuid('id').primaryKey().defaultRandom(), // UUIDv7 via custom default
+  mrn: varchar('mrn', { length: 50 }).notNull().unique(),
+  firstNameEnc: bytea('first_name_enc').notNull(),   // AES-256-GCM encrypted
+  lastNameEnc: bytea('last_name_enc').notNull(),      // AES-256-GCM encrypted
+  nameBlindIndex: varchar('name_blind_index', { length: 64 }), // HMAC-SHA256
+  dateOfBirth: date('date_of_birth').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by'),
+}, (table) => ({
+  blindIndexIdx: index('patients_name_blind_idx').on(table.nameBlindIndex),
+  deletedAtIdx: index('patients_deleted_at_idx').on(table.deletedAt),
+}));
 ```
 
 ---
 
-## Prepared Statements
+## Tenant Schema Switching
 
-**ALWAYS use prepared statements. No exceptions.**
-
-```php
-// ✅ Correct - Prepared statement
-$patient = $wpdb->get_row(
-    $wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}hd_patients WHERE id = %d",
-        $patient_id
-    )
-);
-
-// ✅ Correct - Multiple parameters
-$appointments = $wpdb->get_results(
-    $wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}hd_appointments 
-         WHERE patient_id = %d AND date >= %s",
-        $patient_id,
-        $start_date
-    )
-);
-
-// ❌ Wrong - Direct variable insertion
-$patient = $wpdb->get_row(
-    "SELECT * FROM {$wpdb->prefix}hd_patients WHERE id = {$patient_id}"
-);
-```
-
----
-
-## Soft Delete Pattern
-
-```php
-// All queries must exclude deleted records
-$patients = $wpdb->get_results(
-    "SELECT * FROM {$wpdb->prefix}hd_patients 
-     WHERE deleted_at IS NULL"
-);
-
-// Soft delete implementation
-$wpdb->update(
-    $wpdb->prefix . 'hd_patients',
-    [
-        'deleted_at' => current_time('mysql'),
-        'deleted_by' => get_current_user_id()
-    ],
-    ['id' => $patient_id],
-    ['%s', '%d'],
-    ['%d']
-);
-```
-
----
-
-## Table Creation (Activation Hook)
-
-```php
-// Create tables on plugin activation
-register_activation_hook(__FILE__, 'hd_create_tables');
-
-function hd_create_tables() {
-    global $wpdb;
-    $charset_collate = $wpdb->get_charset_collate();
-    
-    $sql = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}hd_patients (
-        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        mrn varchar(50) NOT NULL,
-        first_name varchar(100) NOT NULL,
-        last_name varchar(100) NOT NULL,
-        date_of_birth date NOT NULL,
-        created_at datetime DEFAULT CURRENT_TIMESTAMP,
-        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        deleted_at datetime DEFAULT NULL,
-        deleted_by bigint(20) UNSIGNED DEFAULT NULL,
-        PRIMARY KEY (id),
-        UNIQUE KEY mrn (mrn),
-        KEY deleted_at (deleted_at)
-    ) $charset_collate;";
-    
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
+```typescript
+// Every request sets the tenant schema via middleware
+async setTenantSchema(db: PostgresJsDatabase, tenantSchema: string): Promise<void> {
+  await db.execute(sql`SET search_path TO ${sql.identifier(tenantSchema)}, public`);
 }
 ```
+
+Never hardcode a schema name. Always derive from the authenticated tenant context.
+
+---
+
+## Soft Delete — ALWAYS Filter
+
+```typescript
+// CORRECT — excludes soft-deleted records
+const activePatients = await db
+  .select()
+  .from(patients)
+  .where(isNull(patients.deletedAt));
+
+// CORRECT — soft delete
+await db
+  .update(patients)
+  .set({ deletedAt: new Date(), deletedBy: userId })
+  .where(eq(patients.id, patientId));
+
+// WRONG — returns deleted records
+const allPatients = await db.select().from(patients);
+```
+
+Every SELECT query on patient data MUST include `where(isNull(table.deletedAt))` unless explicitly retrieving deleted records for audit.
+
+---
+
+## Encrypted Field Pattern
+
+```typescript
+// Encrypt before insert
+const encFirstName = encryptionService.encrypt(dto.firstName);  // returns Buffer
+const blindIndex = encryptionService.blindIndex(dto.firstName); // HMAC-SHA256 hex
+
+await db.insert(patients).values({
+  firstNameEnc: encFirstName,
+  nameBlindIndex: blindIndex,
+});
+
+// Search via blind index (never decrypt to search)
+const index = encryptionService.blindIndex(searchTerm);
+const results = await db
+  .select()
+  .from(patients)
+  .where(and(eq(patients.nameBlindIndex, index), isNull(patients.deletedAt)));
+```
+
+---
+
+## Migrations
+
+```bash
+# Generate migration from schema changes
+pnpm drizzle-kit generate
+
+# Apply migration
+pnpm drizzle-kit migrate
+```
+
+Never modify existing columns without a migration. Never drop columns — add new ones and deprecate.
 
 ---
 
 ## Checklist
 
-- [ ] Using $wpdb->prefix for all tables?
-- [ ] Using prepared statements for all queries?
-- [ ] Including WHERE deleted_at IS NULL?
-- [ ] Using activation hook for table creation?
+- [ ] UUIDv7 primary keys on all tables?
+- [ ] `deletedAt` column on all patient/clinical tables?
+- [ ] `isNull(deletedAt)` in every SELECT?
+- [ ] PHI fields stored as encrypted `bytea`?
+- [ ] Blind indexes for searchable encrypted fields?
+- [ ] Tenant schema set via middleware, never hardcoded?
+- [ ] Drizzle for all queries — no raw SQL interpolation?
